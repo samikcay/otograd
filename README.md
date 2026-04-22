@@ -1,6 +1,6 @@
 ﻿# otograd
 
-C için yazılan ve Andrej Karpathy'nin "micrograd" projesinden ve bu projeyi tekrardan yazdığı "The spelled-out intro to neural networks and backpropagation: building micrograd" isimli videosundan yola çıkılarak, benim tarafımdan hazırlanan bir küçük autograd kütüphanesidir.
+C için yazılan ve Andrej Karpathy'nin "micrograd" projesinden ve bu projeyi tekrardan yazdığı "The spelled-out intro to neural networks and backpropagation: building micrograd" isimli videosundan yola çıkılarak, benim tarafımdan hazırlanan küçük bir autograd kütüphanesidir.
 
 ## Özellikler
 
