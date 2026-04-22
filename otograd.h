@@ -30,7 +30,7 @@ Tensor* tensor_div(Tensor* t1, Tensor* t2);
 void tensor_free(Tensor* t);
 void tensor_free_all(Tensor* t);
 Tensor** topological_sort(Tensor* head, int* out_count);
-void build_topo(Tensor* t, Tensor** topo_list, int* topo_idx);
+void build_topo(Tensor* t, Tensor** tensor_list, int* topo_count);
 void backward(Tensor* head);
 void inline tensor_backward(Tensor* t);
 
