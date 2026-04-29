@@ -10,6 +10,10 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
+
+#define ALLOC(x, y) ((x*)malloc(sizeof(x) * y))
+#define DALLOC(x, y) ((x**)malloc(sizeof(x*) * y))
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,9 +22,6 @@ extern "C" {
 #define MAX_GRAPH_SIZE 1000
 
 typedef struct Tensor Tensor;
-#define TENSOR_ALLOC(x) ((Tensor*)malloc(sizeof(Tensor) * x))
-#define DTENSOR_ALLOC(x) ((Tensor**)malloc(sizeof(Tensor *) * x))
-
 
 Tensor* tensor_create(float data);
 Tensor* tensor_add(Tensor* t1, Tensor* t2);
@@ -29,6 +30,7 @@ Tensor* tensor_sub(Tensor* t1, Tensor* t2);
 Tensor* tensor_div(Tensor* t1, Tensor* t2);
 void tensor_free(Tensor* t);
 void tensor_free_all(Tensor* t);
+
 Tensor** topological_sort(Tensor* head, int* out_count);
 void build_topo(Tensor* t, Tensor** tensor_list, int* topo_count);
 void backward(Tensor* head);

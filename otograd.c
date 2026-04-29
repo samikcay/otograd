@@ -11,7 +11,7 @@ struct Tensor {
 
 Tensor* tensor_create(float data)
 {
-    Tensor* t = TENSOR_ALLOC(1);
+    Tensor* t = ALLOC(Tensor, 1);
     t->data = data;
     t->grad = 0.0f;
     t->_from = NULL;
@@ -24,7 +24,7 @@ Tensor* tensor_create(float data)
 
 Tensor* tensor_add(Tensor* t1, Tensor* t2)
 {
-    Tensor* t = TENSOR_ALLOC(1);
+    Tensor* t = ALLOC(Tensor, 1);
     t->data = t1->data + t2->data;
     t->grad = 0.0f;
     t->_op = '+';
@@ -41,7 +41,7 @@ Tensor* tensor_add(Tensor* t1, Tensor* t2)
 
 Tensor* tensor_mul(Tensor* t1, Tensor* t2)
 {
-    Tensor* t = TENSOR_ALLOC(1);
+    Tensor* t = ALLOC(Tensor, 1);
     t->data = t1->data * t2->data;
     t->grad = 0.0f;
     t->_op = '*';
@@ -58,14 +58,14 @@ Tensor* tensor_mul(Tensor* t1, Tensor* t2)
 
 Tensor* tensor_sub(Tensor* t1, Tensor* t2)
 {
-    Tensor* t = TENSOR_ALLOC(1);
+    Tensor* t = ALLOC(Tensor, 1);
     t->data = t1->data - t2->data;
     t->grad = 0.0f;
     t->_op = '-';
     t->_num_from = 2;
     t->visited = 0;
     
-    Tensor** from = DTENSOR_ALLOC(2);
+    Tensor** from = DALLOC(Tensor*, 2);
     from[0] = t1;
     from[1] = t2;
     t->_from = from;
@@ -75,14 +75,14 @@ Tensor* tensor_sub(Tensor* t1, Tensor* t2)
 
 Tensor* tensor_div(Tensor* t1, Tensor* t2)
 {
-    Tensor* t = TENSOR_ALLOC(1);
+    Tensor* t = ALLOC(Tensor, 1);
     t->data = t1->data / t2->data;
     t->grad = 0.0f;
     t->_op = '/';
     t->_num_from = 2;
     t->visited = 0;
 
-    Tensor** from = DTENSOR_ALLOC(2);
+    Tensor** from = DALLOC(Tensor*, 2);
     from[0] = t1;
     from[1] = t2;
     t->_from = from;
@@ -116,7 +116,7 @@ void tensor_free_all(Tensor* t)
 
 Tensor** topological_sort(Tensor* head, int* out_count)
 {
-    Tensor** tensor_list = DTENSOR_ALLOC(MAX_GRAPH_SIZE);
+    Tensor** tensor_list = DALLOC(Tensor*, MAX_GRAPH_SIZE);
     int topo_count = 0;
 
     build_topo(head, tensor_list, &topo_count);
