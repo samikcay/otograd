@@ -1,4 +1,4 @@
-#include "otograd.h"
+#include "../src/otograd.h"
 
 #ifdef __cplusplus
 extern "C" {
