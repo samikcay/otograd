@@ -31,6 +31,7 @@ typedef struct Tensor {
     int _num_from;
     char _op;
     int visited;
+    int requires_grad;
 } Tensor;
 
 Tensor* tensor_create(float data);
@@ -38,6 +39,8 @@ Tensor* tensor_add(Tensor* t1, Tensor* t2);
 Tensor* tensor_mul(Tensor* t1, Tensor* t2);
 Tensor* tensor_sub(Tensor* t1, Tensor* t2);
 Tensor* tensor_div(Tensor* t1, Tensor* t2);
+Tensor* tensor_tanh(Tensor* t);
+Tensor* tensor_relu(Tensor* t);
 void tensor_free(Tensor* t);
 void tensor_free_all(Tensor* t);
 

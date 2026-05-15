@@ -7,30 +7,32 @@ Neuron* neuron_create(int nin)
 	Neuron* neuron = ALLOC(Neuron, 1);
 
 	neuron->w = DALLOC(Tensor, nin);
-	neuron->b = tensor_create(((float)rand() / (float)RAND_MAX) * 2);
+	neuron->b = tensor_create(((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f);
+	neuron->b->requires_grad = 1;
 	neuron->w_length = nin;
 
 	for (int i = 0; i < nin; i++)
 	{
-		neuron->w[i] = tensor_create(((float)rand() / (float)RAND_MAX) * 2); // -1 ile 1 arasi bir float değer - a float value between -1, 1
+		neuron->w[i] = tensor_create(((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f); // -1 ile 1 arasi bir float değer - a float value between -1, 1
+		neuron->w[i]->requires_grad = 1;
 	}
 
 	return neuron;
 }
 
-float neuron_forward(Neuron* n, float* xs, int xs_length)
+Tensor* neuron_forward(Neuron* n, Tensor** xs, int xs_length)
 {
-	if (xs == NULL || n == NULL || n->w == NULL) return 0.0f;
+	if (xs == NULL || n == NULL || n->w == NULL) return NULL;
 
 	assert(n->w_length == xs_length);
 
-	float wsum = n->b->data;
+	Tensor* wsum = n->b;
 	for (int i = 0; i < xs_length; i++)
 	{
-		wsum += n->w[i]->data * xs[i];
+		wsum = tensor_add(wsum, tensor_mul(n->w[i], xs[i]));
 	}
 
-	return tanh(wsum);
+	return tensor_tanh(wsum);
 }
 
 Tensor** neuron_params(Neuron* n, int* param_count)
@@ -80,17 +82,18 @@ Layer* layer_create(int nin, int nout)
 	return layer;
 }
 
-float layer_forward(Layer* l, float* xs, int xs_length)
+Tensor** layer_forward(Layer* l, Tensor** xs, int xs_length, int* out_count)
 {
 	assert(l != NULL && l->neurons != NULL && xs != NULL);
-	float wsum = 0.0f;
-
+	
+	Tensor** outputs = DALLOC(Tensor, l->neuron_count);
 	for (int i = 0; i < l->neuron_count; i++)
 	{
-		wsum += neuron_forward(l->neurons[i], xs, xs_length);
+		outputs[i] = neuron_forward(l->neurons[i], xs, xs_length);
 	}
 
-	return wsum;
+	if (out_count) *out_count = l->neuron_count;
+	return outputs;
 }
 
 Tensor** layer_params(Layer* l, int* param_count)
@@ -135,41 +138,28 @@ MLP* mlp_create(int nin, int* layer_count, int layer_count_size)
 	return mlp;
 }
 
-float mlp_forward(MLP* mlp, float* xs, int xs_count)
+Tensor** mlp_forward(MLP* mlp, Tensor** xs, int xs_count, int* out_count)
 {
 	assert(mlp != NULL && mlp->layers != NULL && xs != NULL);
 
-	float* current_xs = xs;
+	Tensor** current_xs = xs;
 	int current_count = xs_count;
-	float* previous_outputs = NULL;
-	float* outputs = NULL;
-	int output_count = 0;
+	Tensor** outputs = NULL;
 
 	for (int i = 0; i < mlp->layer_count; i++)
 	{
 		Layer* layer = mlp->layers[i];
-		output_count = layer->neuron_count;
-		outputs = ALLOC(float, output_count);
-
-		for (int j = 0; j < output_count; j++)
-		{
-			outputs[j] = neuron_forward(layer->neurons[j], current_xs, current_count);
-		}
-
-		free(previous_outputs);
-		previous_outputs = outputs;
+		int layer_out_count = 0;
+		outputs = layer_forward(layer, current_xs, current_count, &layer_out_count);
+		
+		if (i > 0) free(current_xs); // intermediate results array
+		
 		current_xs = outputs;
-		current_count = output_count;
+		current_count = layer_out_count;
 	}
 
-	float result = 0.0f;
-	for (int i = 0; i < output_count; i++)
-	{
-		result += outputs[i];
-	}
-
-	free(outputs);
-	return result;
+	if (out_count) *out_count = current_count;
+	return outputs;
 }
 
 Tensor** mlp_params(MLP* mlp, int* param_count)

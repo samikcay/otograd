@@ -21,16 +21,16 @@ typedef struct MLP {
 } MLP;
 
 Neuron* neuron_create(int n);
-float neuron_forward(Neuron* n, float* x, int x_length);
+Tensor* neuron_forward(Neuron* n, Tensor** x, int x_length);
 Tensor** neuron_params(Neuron* n, int* param_count);
 void neuron_delete(Neuron* neuron);
 
 Layer* layer_create(int nin, int nout);
-float layer_forward(Layer* l, float* x, int x_length);
+Tensor** layer_forward(Layer* l, Tensor** x, int x_length, int* out_count);
 Tensor** layer_params(Layer* l, int* param_count);
 
 MLP* mlp_create(int nin, int* layer_count, int layer_count_size);
-float mlp_forward(MLP* mlp, float* x, int x_length);
+Tensor** mlp_forward(MLP* mlp, Tensor** x, int x_length, int* out_count);
 Tensor** mlp_params(MLP* mlp, int* param_count);
 
 void print_neuron_params(Neuron* n);

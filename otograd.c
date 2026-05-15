@@ -9,6 +9,7 @@ Tensor* tensor_create(float data)
     t->_num_from = 0;
     t->_op = ' ';
     t->visited = 0;
+    t->requires_grad = 0;
 
     return t;
 }
@@ -81,6 +82,38 @@ Tensor* tensor_div(Tensor* t1, Tensor* t2)
     return t;
 }
 
+Tensor* tensor_tanh(Tensor* t_in)
+{
+    Tensor* t = ALLOC(Tensor, 1);
+    t->data = tanh(t_in->data);
+    t->grad = 0.0f;
+    t->_op = 't'; // 't' for tanh
+    t->_num_from = 1;
+    t->visited = 0;
+
+    Tensor** from = DALLOC(Tensor, 1);
+    from[0] = t_in;
+    t->_from = from;
+
+    return t;
+}
+
+Tensor* tensor_relu(Tensor* t_in)
+{
+    Tensor* t = ALLOC(Tensor, 1);
+    t->data = (t_in->data > 0) ? t_in->data : 0;
+    t->grad = 0.0f;
+    t->_op = 'r'; // 'r' for relu
+    t->_num_from = 1;
+    t->visited = 0;
+
+    Tensor** from = DALLOC(Tensor, 1);
+    from[0] = t_in;
+    t->_from = from;
+
+    return t;
+}
+
 void tensor_free(Tensor* t)
 {
     if (t != NULL)
@@ -100,8 +133,19 @@ void tensor_free_all(Tensor* t)
     }
 
     for (int i = 0; i < tensor_count; i++) {
-        free(tensor_list[i]->_from);
-        free(tensor_list[i]);
+        if (tensor_list[i]->requires_grad == 0) {
+            free(tensor_list[i]->_from);
+            free(tensor_list[i]);
+        } else {
+            // For parameters, we just clear their _from (though they shouldn't have any)
+            // and keep the tensor itself.
+            if (tensor_list[i]->_from != NULL) {
+                free(tensor_list[i]->_from);
+                tensor_list[i]->_from = NULL;
+                tensor_list[i]->_num_from = 0;
+            }
+            tensor_list[i]->_op = ' '; // Reset op just in case
+        }
     }
 
     free(tensor_list);
@@ -179,31 +223,47 @@ void tensor_backward(Tensor* t)
 {
     if (t->_num_from > 0 && t->_from != NULL)
     {
-        Tensor* t1 = t->_from[0]; Tensor* t2 = t->_from[1];
+        Tensor* t1 = t->_from[0];
+        Tensor* t2 = (t->_num_from > 1) ? t->_from[1] : NULL;
         switch (t->_op)
         {
         case '+':
             {
                 t1->grad += 1.0f * t->grad;
-                t2->grad += 1.0f * t->grad;
+                if (t2) t2->grad += 1.0f * t->grad;
             }
             break;
         case '-':
             {
                 t1->grad += 1.0f * t->grad;
-                t2->grad += -1.0f * t->grad;
+                if (t2) t2->grad += -1.0f * t->grad;
             }
             break;
         case '*':
             {
-                t1->grad += t2->data * t->grad;
-                t2->grad += t1->data * t->grad;
+                if (t2) {
+                    t1->grad += t2->data * t->grad;
+                    t2->grad += t1->data * t->grad;
+                }
             }
             break;
         case '/':
             {
-                t1->grad += (1.0f / t2->data) * t->grad;
-                t2->grad += (-t1->data / (t2->data * t2->data)) * t->grad;
+                if (t2) {
+                    t1->grad += (1.0f / t2->data) * t->grad;
+                    t2->grad += (-t1->data / (t2->data * t2->data)) * t->grad;
+                }
+            }
+            break;
+        case 't':
+            {
+                // tanh'(x) = 1 - tanh^2(x)
+                t1->grad += (1.0f - t->data * t->data) * t->grad;
+            }
+            break;
+        case 'r':
+            {
+                t1->grad += (t1->data > 0 ? 1.0f : 0.0f) * t->grad;
             }
             break;
         }
